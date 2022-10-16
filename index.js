@@ -8,8 +8,8 @@ const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
-const connection = require("./database.js");
-const secret = require("./secret.js");
+const connection = require("./config/database.js");
+const secret = require("./config/secret.js");
 require("dotenv/config");
 
 //const router = express.Router();
