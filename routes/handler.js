@@ -6,6 +6,7 @@ const saltRounds = 10;
 
 const connection = require("../config/database.js");
 const secrets = require("../config/secrets.js");
+const { query } = require("express");
 
 router.post("/api/auth/register", (req, res) => {
   const email = req.body.email;
@@ -127,150 +128,70 @@ router.post("/api/auth/login", (req, res) => {
   );
 });
 
-router.post("/api/get/day", (req, res) => {
+router.post("/api/add/day", (req, res) => {
   const userId = req.body.userId;
   const date = req.body.date;
 
-  // get dayId
   connection.query(
-    "SELECT dayId FROM days WHERE userId = ? AND date = ?;",
-    [userId, date],
-    (queryErr, queryResult) => {
+    "INSERT INTO days(date, userId) VALUES(?,?);",
+    [date, userId],
+    async (queryErr, queryResult) => {
       // if query unsuccessful
       if (queryErr) {
-        if (queryErr.code === "ECONNREFUSED") {
-          res.send({ error: true, message: "Unable to connect to database" });
-        } else {
-          console.log(queryErr);
-          res.send({ error: true, message: "Error" });
-        }
+        res.status(500).send("Day insert error");
         return;
       }
-      // if day exists, return
-      if (queryResult.length > 0) {
-        res.send({ error: false, dayId: queryResult[0] });
-      }
-      // if day does not exist, add new day
-      else {
-        connection.query(
-          "INSERT INTO days(date, userId) VALUES(?,?);",
-          [date, userId],
-          (queryErr, queryResult) => {
-            // if query unsuccessful
-            if (queryErr) {
-              if (queryErr.code === "ECONNREFUSED") {
-                res.send({
-                  error: true,
-                  message: "Unable to connect to database",
-                });
-              } else {
-                console.log(queryErr);
-                res.send({ error: true, message: "Error" });
-              }
-              return;
-            }
-            // if query successful, get dayId
-            connection.query(
-              "SELECT dayId FROM days WHERE userId = ? AND date = ?;",
-              [userId, date],
-              (queryErr, queryResult) => {
-                // if query unsuccessful
-                if (queryErr) {
-                  if (queryErr.code === "ECONNREFUSED") {
-                    res.send({
-                      error: true,
-                      message: "Unable to connect to database",
-                    });
-                  } else {
-                    console.log(queryErr);
-                    res.send({ error: true, message: "Error" });
-                  }
-                  return;
-                }
-                // if query successful, return dayId
-                res.send({ error: false, dayId: queryResult });
-              }
-            );
+      // if query successful, get dayId
+      connection.query(
+        "SELECT dayId FROM days WHERE date = ? AND userId = ?;",
+        [date, userId],
+        (queryErr, queryResult) => {
+          // if query unsuccessful
+          if (queryErr) {
+            res.status(500).send("Day select error");
+            return;
           }
-        );
-      }
+          // if query successful, return dayId
+          res.send(queryResult[0]);
+        }
+      );
     }
   );
 });
 
-router.post("/api/get/meal", (req, res) => {
+router.post("/api/add/meal", async (req, res) => {
   const dayId = req.body.dayId;
-  const meal = req.body.meal;
+  const mealName = req.body.mealName;
 
-  // get mealId
   connection.query(
-    "SELECT mealId FROM meals WHERE dayId = ? AND mealName = ?;",
-    [dayId, meal],
+    "INSERT INTO meals(mealName, dayId) VALUES(?,?);",
+    [mealName, dayId],
     (queryErr, queryResult) => {
       // if query unsuccessful
       if (queryErr) {
-        if (queryErr.code === "ECONNREFUSED") {
-          res.send({ error: true, message: "Unable to connect to database" });
-        } else {
-          console.log(queryErr);
-          res.send({ error: true, message: "Error" });
-        }
+        res.status(500).send("Meal insert error");
         return;
       }
-      // if meal exists, return
-      if (queryResult.length > 0) {
-        res.send({ error: false, mealId: queryResult[0] });
-      }
-      // if meal does not exist, add new meal
-      else {
-        connection.query(
-          "INSERT INTO meals(mealName, dayId) VALUES(?,?);",
-          [meal, dayId],
-          (queryErr, queryResult) => {
-            // if query unsuccessful
-            if (queryErr) {
-              if (queryErr.code === "ECONNREFUSED") {
-                res.send({
-                  error: true,
-                  message: "Unable to connect to database",
-                });
-              } else {
-                console.log(queryErr);
-                res.send({ error: true, message: "Error" });
-              }
-              return;
-            }
-            // if query successful, get mealId
-            connection.query(
-              "SELECT mealId FROM meals WHERE dayId = ? AND mealName = ?;",
-              [dayId, meal],
-              (queryErr, queryResult) => {
-                // if query unsuccessful
-                if (queryErr) {
-                  if (queryErr.code === "ECONNREFUSED") {
-                    res.send({
-                      error: true,
-                      message: "Unable to connect to database",
-                    });
-                  } else {
-                    console.log(queryErr);
-                    res.send({ error: true, message: "Error" });
-                  }
-                  return;
-                }
-                // if query successful, return mealId
-                res.send({ error: false, mealId: queryResult[0] });
-              }
-            );
+      // if query successful, get mealId
+      connection.query(
+        "SELECT mealId FROM meals WHERE dayId = ? AND mealName = ?;",
+        [dayId, mealName],
+        (queryErr, queryResult) => {
+          // if query unsuccessful
+          if (queryErr) {
+            res.status(500).send("Meal select error");
+            return;
           }
-        );
-      }
+          // if query successful, return mealId
+          res.send(queryResult[0]);
+        }
+      );
     }
   );
 });
 
 router.post("/api/add/food", (req, res) => {
-  const foodName = "temporary food"; //req.body.food;
+  const foodName = req.body.foodName;
   const serving = req.body.serving;
   const calories = req.body.calories;
   const carbs = req.body.carbs;
@@ -285,196 +206,167 @@ router.post("/api/add/food", (req, res) => {
     (queryErr, queryResult) => {
       // if query unsuccessful
       if (queryErr) {
-        if (queryErr.code === "ECONNREFUSED") {
-          res.send({ error: true, message: "Unable to connect to database" });
-        } else {
-          console.log(queryErr);
-          res.send({ error: true, message: "Error" });
-        }
+        res.status(500).send("Food insert error");
         return;
       }
       // successful
-      if (queryResult.length > 0) {
-        res.send({ error: false, message: "food add successful!" });
-      }
+      res.end();
     }
   );
 });
 
-/* router.post("/api/add/food", (req, res) => {
-  const foodName = "temporary food"; //req.body.food;
-  const serving = req.body.serving;
-  const calories = req.body.calories;
-  const carbs = req.body.carbs;
-  const protein = req.body.protein;
-  const fat = req.body.fat;
+router.post("/api/get/ids", (req, res) => {
   const userId = req.body.userId;
   const date = req.body.date;
-  const meal = req.body.meal;
+
   let dayId = 0;
-  let mealId = 0;
+  let breakfastId = 0;
+  let lunchId = 0;
+  let dinnerId = 0;
 
-  // get dayId
   connection.query(
-    "SELECT dayId FROM days WHERE userId = ? AND date = ?;",
-    [userId, date],
-    (queryErr, queryResult) => {
-      // if query unsuccessful
+    "SELECT dayId FROM days WHERE date = ? AND userId = ?",
+    [date, userId],
+    async (queryErr, queryResult) => {
       if (queryErr) {
-        if (queryErr.code === "ECONNREFUSED") {
-          res.send({ error: true, message: "Unable to connect to database" });
-        } else {
-          console.log(queryErr);
-          res.send({ error: true, message: "Error" });
-        }
+        res.status(500).send("Query error");
         return;
       }
-      // if day exists, set dayid and continue to meal
+
+      // if date exists, get meals
       if (queryResult.length > 0) {
-        dayId = queryResult[0].dayId.dayId;
-        return;
-      }
-      // if day does not exist, add new day
-      else {
-        connection.query(
-          "INSERT INTO days(date, userId) VALUES(?,?);",
-          [date, userId],
-          (queryErr, queryResult) => {
-            // if query unsuccessful
-            if (queryErr) {
-              if (queryErr.code === "ECONNREFUSED") {
-                res.send({
-                  error: true,
-                  message: "Unable to connect to database",
-                });
-              } else {
-                console.log(queryErr);
-                res.send({ error: true, message: "Error" });
-              }
-              return;
-            }
-            // if query successful, get dayId
-            connection.query(
-              "SELECT dayId FROM days WHERE userId = ? AND date = ?;",
-              [userId, date],
-              (queryErr, queryResult) => {
-                // if query unsuccessful
-                if (queryErr) {
-                  if (queryErr.code === "ECONNREFUSED") {
-                    res.send({
-                      error: true,
-                      message: "Unable to connect to database",
-                    });
-                  } else {
-                    console.log(queryErr);
-                    res.send({ error: true, message: "Error" });
-                  }
-                  return;
-                }
-                // if query successful, set day id and continue to meal
-                dayId = queryResult[0].dayId.dayId;
+        dayId = queryResult[0].dayId;
+
+        // breakfast
+        breakfastId = await new Promise((resolve, reject) => {
+          connection.query(
+            "SELECT mealId from meals WHERE mealName = 'Breakfast' AND dayId = ?;",
+            [dayId],
+            (queryErr, queryResult) => {
+              if (queryErr) {
+                res.status(500).send("Query error");
                 return;
               }
-            );
-          }
-        );
-      }
-    }
-  );
 
-  // get mealId
-  connection.query(
-    "SELECT mealId FROM meals WHERE dayId = ? AND mealName = ?;",
-    [dayId, meal],
-    (queryErr, queryResult) => {
-      // if query unsuccessful
-      if (queryErr) {
-        if (queryErr.code === "ECONNREFUSED") {
-          res.send({ error: true, message: "Unable to connect to database" });
-        } else {
-          console.log(queryErr);
-          res.send({ error: true, message: "Error" });
-        }
-        return;
-      }
-      // if meal exists, set meal id and continue to food
-      if (queryResult.length > 0) {
-        mealId = queryResult[0].mealId.mealId;
-        return;
-      }
-      // if meal does not exist, add new meal
-      else {
-        connection.query(
-          "INSERT INTO meals(mealName, dayId) VALUES(?,?);",
-          [meal, dayId],
-          (queryErr, queryResult) => {
-            // if query unsuccessful
-            if (queryErr) {
-              if (queryErr.code === "ECONNREFUSED") {
-                res.send({
-                  error: true,
-                  message: "Unable to connect to database",
-                });
+              // if breakfast exists, get mealId
+              if (queryResult.length > 0) {
+                resolve(queryResult[0].mealId);
               } else {
-                console.log(queryErr);
-                res.send({ error: true, message: "Error" });
+                resolve(0);
               }
-              return;
             }
-            // if query successful, get mealId
-            connection.query(
-              "SELECT mealId FROM meals WHERE dayId = ? AND mealName = ?;",
-              [dayId, meal],
-              (queryErr, queryResult) => {
-                // if query unsuccessful
-                if (queryErr) {
-                  if (queryErr.code === "ECONNREFUSED") {
-                    res.send({
-                      error: true,
-                      message: "Unable to connect to database",
-                    });
-                  } else {
-                    console.log(queryErr);
-                    res.send({ error: true, message: "Error" });
-                  }
-                  return;
-                }
-                // if query successful, set meal id and continue to food
-                mealId = queryResult[0].mealId.mealId;
+          );
+        });
+
+        // lunch
+        lunchId = await new Promise((resolve, reject) => {
+          connection.query(
+            "SELECT mealId from meals WHERE mealName = 'Lunch' AND dayId = ?;",
+            [dayId],
+            (queryErr, queryResult) => {
+              if (queryErr) {
+                res.status(404).send("Query error");
                 return;
               }
-            );
-          }
-        );
+
+              // if dinner exists, get mealId
+              if (queryResult.length > 0) {
+                resolve(queryResult[0].mealId);
+              } else {
+                resolve(0);
+              }
+            }
+          );
+        });
+
+        // dinner
+        dinnerId = await new Promise((resolve, reject) => {
+          connection.query(
+            "SELECT mealId from meals WHERE mealName = 'Dinner' AND dayId = ?;",
+            [dayId],
+            (queryErr, queryResult) => {
+              if (queryErr) {
+                res.status(404).send("Query error");
+                return;
+              }
+
+              // if dinner exists, get mealId
+              if (queryResult.length > 0) {
+                resolve(queryResult[0].mealId);
+              } else {
+                resolve(0);
+              }
+            }
+          );
+        });
       }
+
+      res.send({
+        dayId: dayId,
+        breakfastId: breakfastId,
+        lunchId: lunchId,
+        dinnerId: dinnerId,
+      });
     }
   );
+});
 
-  // add food
-  connection.query(
-    "INSERT INTO food(foodName, serving, calories, carbs, protein, fat, mealId) VALUES(?,?,?,?,?,?,?);",
-    [foodName, serving, calories, carbs, protein, fat, mealId],
-    (queryErr, queryResult) => {
-      // if query unsuccessful
-      if (queryErr) {
-        if (queryErr.code === "ECONNREFUSED") {
-          res.send({ error: true, message: "Unable to connect to database" });
-        } else {
-          console.log(queryErr);
-          res.send({ error: true, message: "Error" });
+router.post("/api/get/food", async (req, res) => {
+  const breakfastId = req.body.breakfastId;
+  const lunchId = req.body.lunchId;
+  const dinnerId = req.body.dinnerId;
+
+  // breakfast food
+  let breakfast = await new Promise((resolve, reject) => {
+    connection.query(
+      "SELECT foodName, serving, calories, carbs, protein, fat FROM food WHERE mealid = ?;",
+      [breakfastId],
+      (queryErr, queryResult) => {
+        // if query unsuccessful
+        if (queryErr) {
+          res.status(500).send("Breakfast select error");
+          return;
         }
-        return;
+        resolve(queryResult);
       }
-      // successful
-      if (queryResult.length > 0) {
-        res.send({ error: false, message: "food add successful!" });
-      }
-    }
-  );
-}); */
+    );
+  });
 
-router.post("/api/auth/logout", (req, res) => {
-  res.redirect("http://localhost:3000/goals");
+  let lunch = await new Promise((resolve, reject) => {
+    connection.query(
+      "SELECT foodName, serving, calories, carbs, protein, fat FROM food WHERE mealid = ?;",
+      [lunchId],
+      (queryErr, queryResult) => {
+        // if query unsuccessful
+        if (queryErr) {
+          res.status(500).send("Lunch select error");
+          return;
+        }
+        resolve(queryResult);
+      }
+    );
+  });
+
+  let dinner = await new Promise((resolve, reject) => {
+    connection.query(
+      "SELECT foodName, serving, calories, carbs, protein, fat FROM food WHERE mealid = ?;",
+      [dinnerId],
+      (queryErr, queryResult) => {
+        // if query unsuccessful
+        if (queryErr) {
+          res.status(500).send("Dinner select error");
+          return;
+        }
+        resolve(queryResult);
+      }
+    );
+  });
+
+  res.send({
+    breakfast: breakfast,
+    lunch: lunch,
+    dinner: dinner,
+  });
 });
 
 /* app.post("/api/food/get", (req, res) => {
