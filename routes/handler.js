@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
@@ -369,19 +371,26 @@ router.post("/api/get/food", async (req, res) => {
   });
 });
 
-/* app.post("/api/food/get", (req, res) => {
-        const query = req.body.query;
-        const pageSize = 25;
-        
-        const api_url = `${process.env.REACT_APP_FOOD_API_LINK}api_key=${
-          process.env.REACT_APP_FOOD_API_KEY
-  }&query=${encodeURIComponent(query)}&pageSize=${pageSize}`;
+router.post("/api/foodcentral", (req, res) => {
+  const query = req.body.query;
+  const pageNumber = req.body.pageNumber;
+  const pageSize = 25;
+
+  const api_url = `${process.env.REACT_APP_FOOD_API_LINK}api_key=${
+    process.env.REACT_APP_FOOD_API_KEY
+  }&query=${encodeURIComponent(
+    query
+  )}&pageNumber=${pageNumber}&pageSize=${pageSize}`;
 
   fetch(api_url)
     .then((response) => response.json())
-    .then((json) => {
-      console.log(json);
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((error) => {
+      res.status(500).send("fetch error");
+      console.log(error);
     });
-}); */
+});
 
 module.exports = router;
